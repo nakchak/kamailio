@@ -216,8 +216,15 @@ void db_unixodbc_extract_error(const char *fn, const SQLHANDLE handle, const SQL
 		ret = SQLGetDiagRec(type, handle, ++i, state, &native, text,
 			sizeof(text), &len );
 		if (SQL_SUCCEEDED(ret)) {
-			LM_ERR("unixodbc:%s=%s:%ld:%ld:%s\n", fn, state, (long)i,
-					(long)native, text);
+			/*
+			 * If the error code is 01000 then emit to debug rather than error, as the 01000 state code is a general warning/info level not an error.
+			 */
+			if( !strncmp((char*)state,"01000",5) ){
+				LM_DBG("unixodbc:%s=%s:%ld:%ld:%s\n", fn, state, (long)i, (long)native, text);
+			}
+			else {
+				LM_ERR("unixodbc:%s=%s:%ld:%ld:%s\n", fn, state, (long)i, (long)native, text);
+			}
 			if(stret) strcpy( stret, (char*)state );
 		}
 	}
