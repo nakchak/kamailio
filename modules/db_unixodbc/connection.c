@@ -149,8 +149,7 @@ struct my_con* db_unixodbc_new_connection(struct db_id* id)
 		goto err2;
 	}
 
-	LM_DBG("opening connection: unixodbc://xxxx:xxxx@%s/%s\n", ZSW(id->host),
-		ZSW(id->database));
+	LM_DBG("opening connection: unixodbc://xxxx:xxxx@%s/%s\n", ZSW(id->host), ZSW(id->database));
 
 	ret = SQLDriverConnect(ptr->dbc, NULL, (SQLCHAR*)conn_str, SQL_NTS,
 		outstr, sizeof(outstr), &outstrlen,
@@ -167,8 +166,37 @@ struct my_con* db_unixodbc_new_connection(struct db_id* id)
 	else
 	{
 		LM_ERR("failed to connect\n");
-		db_unixodbc_extract_error("SQLDriverConnect", ptr->dbc, SQL_HANDLE_DBC, NULL);
-		goto err2;
+		SQLCHAR sqlstate[7];
+		db_unixodbc_extract_error("SQLDriverConnect", ptr->dbc, SQL_HANDLE_DBC, (char*)sqlstate));
+		if( !strncmp((char*)sqlstate,"08001",5) || 
+			!strncmp((char*)sqlstate,"08002",5) || 
+			!strncmp((char*)sqlstate,"08003",5) || 
+			!strncmp((char*)sqlstate,"08004",5) || 
+			!strncmp((char*)sqlstate,"08007",5) || 
+			!strncmp((char*)sqlstate,"08S01",5)
+		)
+		{
+			LM_DBG("driver reported 08xxx ODBC Error Attempt Reconnect\n");
+			ret = SQLDriverConnect(ptr->dbc, NULL, (SQLCHAR*)conn_str, SQL_NTS, outstr, sizeof(outstr), &outstrlen, SQL_DRIVER_COMPLETE);
+			if (SQL_SUCCEEDED(ret))
+			{
+				LM_DBG("connection succeeded with reply <%s>\n", outstr);
+				if (ret == SQL_SUCCESS_WITH_INFO)
+				{
+					LM_DBG("driver reported the following diagnostics\n");
+					db_unixodbc_extract_error("SQLDriverConnect", ptr->dbc, SQL_HANDLE_DBC, NULL);
+				}
+			}
+			else
+			{
+				LM_ERR("failed to connect\n");
+				db_unixodbc_extract_error("SQLDriverConnect", ptr->dbc, SQL_HANDLE_DBC, NULL);
+				goto err2;
+			}
+		else{
+			db_unixodbc_extract_error("SQLDriverConnect", ptr->dbc, SQL_HANDLE_DBC, NULL);
+			goto err2;
+		}
 	}
 
 	ptr->stmt_handle = NULL;

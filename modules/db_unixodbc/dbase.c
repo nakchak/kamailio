@@ -117,8 +117,13 @@ static int db_unixodbc_submit_query(const db1_con_t* _h, const str* _s)
 			(char*)sqlstate);
 
 		/* Connection broken */
-		if( !strncmp((char*)sqlstate,"08003",5) ||
-		!strncmp((char*)sqlstate,"08S01",5) ) {
+		if( !strncmp((char*)sqlstate,"08001",5) || 
+			!strncmp((char*)sqlstate,"08002",5) || 
+			!strncmp((char*)sqlstate,"08003",5) || 
+			!strncmp((char*)sqlstate,"08004",5) || 
+			!strncmp((char*)sqlstate,"08007",5) || 
+			!strncmp((char*)sqlstate,"08S01",5)
+		) {
 			ret = reconnect(_h);
 			if( !SQL_SUCCEEDED(ret) ) return ret;
 		} else {
@@ -135,9 +140,13 @@ static int db_unixodbc_submit_query(const db1_con_t* _h, const str* _s)
 			(char*)sqlstate);
 
 		/* Connection broken */
-		if( !strncmp((char*)sqlstate,"08003",5) ||
-		    !strncmp((char*)sqlstate,"08S01",5)
-		    )
+		if( !strncmp((char*)sqlstate,"08001",5) || 
+			!strncmp((char*)sqlstate,"08002",5) || 
+			!strncmp((char*)sqlstate,"08003",5) || 
+			!strncmp((char*)sqlstate,"08004",5) || 
+			!strncmp((char*)sqlstate,"08007",5) || 
+			!strncmp((char*)sqlstate,"08S01",5)
+		)
 		{
 			ret = reconnect(_h);
 			if( SQL_SUCCEEDED(ret) ) {
